@@ -1,11 +1,15 @@
+import { useSearchParams } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 
 export function LoginPage() {
+  const [searchParams] = useSearchParams()
+  const redirect = searchParams.get('redirect') ?? '/'
+
   const handleGoogleLogin = async () => {
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: `${window.location.origin}/`,
+        redirectTo: `${window.location.origin}${redirect}`,
       },
     })
 
