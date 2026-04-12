@@ -1,73 +1,76 @@
-# React + TypeScript + Vite
+# Seat Manager
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+フリーアドレスオフィスの席管理アプリ。空席をリアルタイムで確認し、QR コードで着席・退席を記録する。
 
-Currently, two official plugins are available:
+## 技術スタック
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+- **Frontend:** React + TypeScript (Vite) + Tailwind CSS
+- **Backend:** Supabase (PostgreSQL + Auth + Realtime + RLS)
+- **Hosting:** Cloudflare Workers
+- **Local Dev:** Docker + Supabase CLI
 
-## React Compiler
+## 機能
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+- フロアマップで空席をリアルタイム確認
+- QR コードで着席・退席
+- 席の予約（日付 + 30分刻み時間指定）
+- 予約の自動取り消し（30分経過 + 未着席）
+- タイムテーブル（ガントチャート風予約一覧）
+- 管理画面（席の追加・削除・QR 生成・レイアウト編集・ユーザー権限管理）
+- Google OAuth ログイン
+- 毎日0時の全席自動リセット
 
-## Expanding the ESLint configuration
+## セットアップ
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+### 必要なもの
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+- Node.js
+- Docker Desktop
+- Supabase アカウント
+- GCP プロジェクト（Google OAuth 用）
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+### ローカル開発
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+# 依存パッケージのインストール
+npm install
+
+# 環境変数の設定
+cp .env.example .env.local
+# .env.local に Supabase のローカル URL と Anon Key を記入
+
+# Google OAuth の設定
+cp supabase/.env.example supabase/.env
+# supabase/.env に GCP の Client ID と Secret を記入
+
+# 開発サーバー起動（Supabase + Vite）
+npm run dev
+
+# 停止
+npm run dev:stop
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+### 環境変数
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+| 変数名 | 用途 |
+|--------|------|
+| `VITE_SUPABASE_URL` | Supabase の接続先 URL |
+| `VITE_SUPABASE_ANON_KEY` | Supabase の Anon Key |
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+### スクリプト
+
+| コマンド | 動作 |
+|---------|------|
+| `npm run dev` | Supabase + Vite を起動 |
+| `npm run dev:vite` | Vite だけ起動 |
+| `npm run dev:stop` | 全部停止 |
+| `npm run build` | 本番ビルド |
+| `npm run lint` | ESLint |
+
+## デプロイ
+
+`main` ブランチに push すると Cloudflare Workers に自動デプロイされる。
+
+## ライセンス
+
+Private
