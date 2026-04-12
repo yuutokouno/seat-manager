@@ -187,6 +187,44 @@ export function FloorMap() {
         </div>
       </div>
 
+      {/* My Current Seat */}
+      {user && currentSeatId && (() => {
+        const currentSeat = seats.find((s) => s.id === currentSeatId)
+        if (!currentSeat || !currentSeat.occupant) return null
+        const startTime = new Date(currentSeat.occupant.started_at).toLocaleTimeString('ja-JP', {
+          hour: '2-digit',
+          minute: '2-digit',
+        })
+        return (
+          <div className="mt-4 bg-gray-900 rounded-xl p-4">
+            <h2 className="text-sm font-medium text-gray-400 mb-3">現在の席</h2>
+            <div className="flex items-center justify-between bg-gray-800 rounded-lg px-4 py-3">
+              <div className="flex items-center gap-3">
+                {currentSeat.occupant.profile?.avatar_url && (
+                  <img src={currentSeat.occupant.profile.avatar_url} alt="" className="w-8 h-8 rounded-full" />
+                )}
+                <div>
+                  <span className="font-medium">{currentSeat.name}</span>
+                  <span className="text-gray-400 text-sm ml-2">{startTime}〜</span>
+                </div>
+              </div>
+              <button
+                onClick={async () => {
+                  const result = await leave(currentSeatId, user.id)
+                  if (result.success) {
+                    setActionMessage('退席しました')
+                    setTimeout(() => setActionMessage(null), 1500)
+                  }
+                }}
+                className="text-red-400 text-sm hover:text-red-300 transition-colors"
+              >
+                退席
+              </button>
+            </div>
+          </div>
+        )
+      })()}
+
       {/* My Reservations */}
       {user && myReservations.length > 0 && (
         <div className="mt-4 bg-gray-900 rounded-xl p-4">
