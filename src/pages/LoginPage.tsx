@@ -21,7 +21,7 @@ export function LoginPage() {
   return (
     <div className="min-h-screen bg-gray-950 text-white flex items-center justify-center">
       <div className="text-center">
-        <h1 className="text-2xl font-bold mb-6">Seat Manager</h1>
+        <img src="/logo.png" alt="Seat Manager" className="w-64 mx-auto mb-6" />
         <button
           onClick={handleGoogleLogin}
           className="bg-white text-gray-900 px-6 py-3 rounded-lg font-medium hover:bg-gray-100 transition-colors"

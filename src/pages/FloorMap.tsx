@@ -111,27 +111,30 @@ export function FloorMap() {
       <ReservationBanner currentSeatId={currentSeatId} reservations={reservations} />
 
       {/* Header */}
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-xl font-bold">🏢 3F フロア</h1>
-        <div className="flex items-center gap-3">
-          <span className="bg-green-600 text-white px-3 py-1 rounded-full text-sm font-semibold">
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center gap-2">
+          <img src="/logo.png" alt="Seat Manager" className="w-16 h-16" />
+          <span className="text-lg font-bold">Seat Manager</span>
+        </div>
+        <div className="flex items-center gap-2 flex-wrap justify-end">
+          <span className="bg-green-600 text-white px-2 py-0.5 rounded-full text-xs font-semibold">
             残り {vacantCount} 席
           </span>
           {user && (
-            <span className="bg-yellow-600 text-white px-3 py-1 rounded-full text-sm font-semibold">
+            <span className="bg-yellow-600 text-white px-2 py-0.5 rounded-full text-xs font-semibold">
               予約 {remainingSlots}/{MAX_RESERVATIONS}
             </span>
           )}
           <button
             onClick={() => navigate('/timetable')}
-            className="text-gray-400 text-sm hover:text-white transition-colors"
+            className="text-gray-400 text-xs hover:text-white transition-colors"
           >
             予約一覧
           </button>
           {role === 'admin' && (
             <button
               onClick={() => navigate('/admin')}
-              className="text-gray-400 text-sm hover:text-white transition-colors"
+              className="text-gray-400 text-xs hover:text-white transition-colors"
             >
               管理
             </button>
@@ -139,14 +142,14 @@ export function FloorMap() {
           {user ? (
             <button
               onClick={() => supabase.auth.signOut()}
-              className="text-gray-400 text-sm hover:text-white transition-colors"
+              className="text-gray-400 text-xs hover:text-white transition-colors"
             >
               ログアウト
             </button>
           ) : (
             <button
               onClick={() => navigate('/login')}
-              className="text-gray-400 text-sm hover:text-white transition-colors"
+              className="text-gray-400 text-xs hover:text-white transition-colors"
             >
               ログイン
             </button>
