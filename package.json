@@ -4,7 +4,9 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
+    "dev": "npx supabase start && vite",
+    "dev:vite": "vite",
+    "dev:stop": "npx supabase stop && lsof -ti:5173 | xargs kill -9 2>/dev/null; echo 'stopped'",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview"
