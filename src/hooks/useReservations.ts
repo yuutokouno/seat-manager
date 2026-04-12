@@ -51,8 +51,29 @@ export function useReservations() {
   }
 
   const MAX_RESERVATIONS = 3
+  const PENALTY_THRESHOLD = 3
+  const PENALTY_DAYS = 7
+
+  const checkPenalty = async (userId: string) => {
+    const since = new Date()
+    since.setDate(since.getDate() - PENALTY_DAYS)
+
+    const { count } = await supabase
+      .from('seat_reservations')
+      .select('*', { count: 'exact', head: true })
+      .eq('user_id', userId)
+      .eq('cancel_type', 'auto')
+      .gte('canceled_at', since.toISOString())
+
+    return (count ?? 0) >= PENALTY_THRESHOLD
+  }
 
   const reserve = async (seatId: string, userId: string, date: string, startsAt: Date) => {
+    const isPenalized = await checkPenalty(userId)
+    if (isPenalized) {
+      return { success: false, error: `直近${PENALTY_DAYS}日間に${PENALTY_THRESHOLD}回以上の無断キャンセルがあるため、予約できません` }
+    }
+
     const { count } = await supabase
       .from('seat_reservations')
       .select('*', { count: 'exact', head: true })
