@@ -1,6 +1,7 @@
 import { useRef, useState, useEffect } from 'react'
 import type { SeatWithSession } from '../../hooks/useSeats'
 import type { FloorLabel } from '../../hooks/useLabels'
+import type { Reservation } from '../../hooks/useReservations'
 import { SeatCard, VIRTUAL_SEAT_SIZE } from './SeatCard'
 
 const CANVAS_WIDTH = 1000
@@ -9,10 +10,11 @@ const CANVAS_HEIGHT = 750
 type SeatGridProps = {
   seats: SeatWithSession[]
   labels: FloorLabel[]
+  reservations: Reservation[]
   onSelect: (seat: SeatWithSession) => void
 }
 
-export function SeatGrid({ seats, labels, onSelect }: SeatGridProps) {
+export function SeatGrid({ seats, labels, reservations, onSelect }: SeatGridProps) {
   const containerRef = useRef<HTMLDivElement>(null)
   const [containerWidth, setContainerWidth] = useState(0)
 
@@ -29,6 +31,9 @@ export function SeatGrid({ seats, labels, onSelect }: SeatGridProps) {
 
   const scale = containerWidth / CANVAS_WIDTH
   const seatSize = Math.max(28, VIRTUAL_SEAT_SIZE * scale)
+
+  const getReservation = (seatId: string) =>
+    reservations.find((r) => r.seat_id === seatId) ?? null
 
   return (
     <div
@@ -80,7 +85,12 @@ export function SeatGrid({ seats, labels, onSelect }: SeatGridProps) {
             top: seat.y * scale,
           }}
         >
-          <SeatCard seat={seat} size={seatSize} onSelect={onSelect} />
+          <SeatCard
+            seat={seat}
+            reservation={getReservation(seat.id)}
+            size={seatSize}
+            onSelect={onSelect}
+          />
         </div>
       ))}
     </div>
