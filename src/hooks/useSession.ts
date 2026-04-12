@@ -1,7 +1,18 @@
 import { supabase } from '../lib/supabase'
 
 export function useSession() {
+  const leaveCurrentSeat = async (userId: string) => {
+    await supabase
+      .from('seat_sessions')
+      .update({ ended_at: new Date().toISOString() })
+      .eq('user_id', userId)
+      .is('ended_at', null)
+  }
+
   const occupy = async (seatId: string, userId: string) => {
+    // Leave current seat if any, then sit in the new one
+    await leaveCurrentSeat(userId)
+
     const { error } = await supabase.from('seat_sessions').insert({
       seat_id: seatId,
       user_id: userId,
@@ -9,7 +20,7 @@ export function useSession() {
 
     if (error) {
       if (error.code === '23505') {
-        return { success: false, error: 'すでに着席中の席があります' }
+        return { success: false, error: 'この席は既に使用中です' }
       }
       return { success: false, error: '着席に失敗しました' }
     }

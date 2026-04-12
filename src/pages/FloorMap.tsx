@@ -5,6 +5,7 @@ import { useSeats } from '../hooks/useSeats'
 import { useSession } from '../hooks/useSession'
 import { SeatGrid } from '../components/seat/SeatGrid'
 import { BottomSheet } from '../components/ui/BottomSheet'
+import { supabase } from '../lib/supabase'
 import type { SeatWithSession } from '../hooks/useSeats'
 
 export function FloorMap() {
@@ -61,9 +62,26 @@ export function FloorMap() {
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-xl font-bold">🏢 3F フロア</h1>
-        <span className="bg-green-600 text-white px-3 py-1 rounded-full text-sm font-semibold">
-          残り {vacantCount} 席
-        </span>
+        <div className="flex items-center gap-3">
+          <span className="bg-green-600 text-white px-3 py-1 rounded-full text-sm font-semibold">
+            残り {vacantCount} 席
+          </span>
+          {user ? (
+            <button
+              onClick={() => supabase.auth.signOut()}
+              className="text-gray-400 text-sm hover:text-white transition-colors"
+            >
+              ログアウト
+            </button>
+          ) : (
+            <button
+              onClick={() => navigate('/login')}
+              className="text-gray-400 text-sm hover:text-white transition-colors"
+            >
+              ログイン
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Seat Grid */}
