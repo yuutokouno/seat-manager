@@ -62,6 +62,60 @@ export type Database = {
         }
         Relationships: []
       }
+      seat_reservations: {
+        Row: {
+          cancel_type: string | null
+          canceled_at: string | null
+          created_at: string
+          date: string
+          expires_at: string
+          id: string
+          seat_id: string
+          seated: boolean | null
+          starts_at: string
+          user_id: string
+        }
+        Insert: {
+          cancel_type?: string | null
+          canceled_at?: string | null
+          created_at?: string
+          date: string
+          expires_at: string
+          id?: string
+          seat_id: string
+          seated?: boolean | null
+          starts_at: string
+          user_id: string
+        }
+        Update: {
+          cancel_type?: string | null
+          canceled_at?: string | null
+          created_at?: string
+          date?: string
+          expires_at?: string
+          id?: string
+          seat_id?: string
+          seated?: boolean | null
+          starts_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "seat_reservations_seat_id_fkey"
+            columns: ["seat_id"]
+            isOneToOne: false
+            referencedRelation: "seats"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "seat_reservations_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       seat_sessions: {
         Row: {
           ended_at: string | null
