@@ -8,9 +8,15 @@ type SeatGridProps = {
 
 export function SeatGrid({ seats, onSelect }: SeatGridProps) {
   return (
-    <div className="grid grid-cols-4 gap-3 justify-items-center">
+    <div className="relative w-full" style={{ paddingBottom: '75%' }}>
       {seats.map((seat) => (
-        <SeatCard key={seat.id} seat={seat} onSelect={onSelect} />
+        <div
+          key={seat.id}
+          className="absolute"
+          style={{ left: `${seat.x}%`, top: `${seat.y}%` }}
+        >
+          <SeatCard seat={seat} onSelect={onSelect} />
+        </div>
       ))}
     </div>
   )
