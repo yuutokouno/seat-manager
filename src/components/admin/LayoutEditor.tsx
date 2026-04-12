@@ -110,7 +110,7 @@ export function LayoutEditor({ seats, labels, onSaved }: LayoutEditorProps) {
     const seatItems = items.filter((i) => i.type === 'seat')
     const labelItems = items.filter((i) => i.type === 'label')
 
-    const gap = 80
+    const gap = 100
     const startX = 40
     const startY = 40
 
