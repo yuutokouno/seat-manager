@@ -19,16 +19,19 @@ export type Database = {
           avatar_url: string | null
           id: string
           name: string | null
+          role: string | null
         }
         Insert: {
           avatar_url?: string | null
           id: string
           name?: string | null
+          role?: string | null
         }
         Update: {
           avatar_url?: string | null
           id?: string
           name?: string | null
+          role?: string | null
         }
         Relationships: []
       }
@@ -76,16 +79,22 @@ export type Database = {
           floor: string | null
           id: string
           name: string
+          x: number | null
+          y: number | null
         }
         Insert: {
           floor?: string | null
           id?: string
           name: string
+          x?: number | null
+          y?: number | null
         }
         Update: {
           floor?: string | null
           id?: string
           name?: string
+          x?: number | null
+          y?: number | null
         }
         Relationships: []
       }
