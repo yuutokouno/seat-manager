@@ -2,8 +2,11 @@ import { useState, useEffect } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
 import { useSeats } from '../hooks/useSeats'
+import { useLabels } from '../hooks/useLabels'
 import { SeatForm } from '../components/admin/SeatForm'
 import { SeatTable } from '../components/admin/SeatTable'
+import { LabelForm } from '../components/admin/LabelForm'
+import { LabelTable } from '../components/admin/LabelTable'
 import { LayoutEditor } from '../components/admin/LayoutEditor'
 import { UserTable } from '../components/admin/UserTable'
 
@@ -12,8 +15,14 @@ type Tab = 'seats' | 'layout' | 'users'
 export function AdminPage() {
   const { user, role, isLoading } = useAuth()
   const { seats, isLoading: isSeatsLoading, refetch } = useSeats()
+  const { labels, refetchLabels } = useLabels()
   const navigate = useNavigate()
   const [activeTab, setActiveTab] = useState<Tab>('seats')
+
+  const refetchAll = () => {
+    refetch()
+    refetchLabels()
+  }
 
   useEffect(() => {
     if (!isLoading && !user) {
@@ -75,11 +84,16 @@ export function AdminPage() {
       {/* Tab Content */}
       {activeTab === 'seats' ? (
         <>
+          <h2 className="text-sm font-medium text-gray-400 mb-3">席</h2>
           <SeatForm onAdded={refetch} />
           <SeatTable seats={seats} onDeleted={refetch} />
+
+          <h2 className="text-sm font-medium text-gray-400 mt-8 mb-3">ラベル</h2>
+          <LabelForm onAdded={refetchLabels} />
+          <LabelTable labels={labels} onDeleted={refetchLabels} />
         </>
       ) : activeTab === 'layout' ? (
-        <LayoutEditor seats={seats} onSaved={refetch} />
+        <LayoutEditor seats={seats} labels={labels} onSaved={refetchAll} />
       ) : (
         <UserTable currentUserId={user.id} />
       )}
