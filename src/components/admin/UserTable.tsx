@@ -5,7 +5,7 @@ type Profile = {
   id: string
   name: string | null
   avatar_url: string | null
-  role: string
+  role: string | null
 }
 
 type UserTableProps = {
