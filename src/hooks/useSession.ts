@@ -9,8 +9,16 @@ export function useSession() {
       .is('ended_at', null)
   }
 
+  const markReservationSeated = async (seatId: string, userId: string) => {
+    await supabase
+      .from('seat_reservations')
+      .update({ seated: true })
+      .eq('seat_id', seatId)
+      .eq('user_id', userId)
+      .is('canceled_at', null)
+  }
+
   const occupy = async (seatId: string, userId: string) => {
-    // Leave current seat if any, then sit in the new one
     await leaveCurrentSeat(userId)
 
     const { error } = await supabase.from('seat_sessions').insert({
@@ -24,6 +32,8 @@ export function useSession() {
       }
       return { success: false, error: '着席に失敗しました' }
     }
+
+    await markReservationSeated(seatId, userId)
 
     return { success: true, error: null }
   }
