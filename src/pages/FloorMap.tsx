@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
 import { useSeats } from '../hooks/useSeats'
+import { useLabels } from '../hooks/useLabels'
 import { useSession } from '../hooks/useSession'
 import { SeatGrid } from '../components/seat/SeatGrid'
 import { BottomSheet } from '../components/ui/BottomSheet'
@@ -11,6 +12,7 @@ import type { SeatWithSession } from '../hooks/useSeats'
 export function FloorMap() {
   const { user, role } = useAuth()
   const { seats, isLoading } = useSeats()
+  const { labels } = useLabels()
   const { occupy, leave } = useSession()
   const navigate = useNavigate()
 
@@ -94,7 +96,7 @@ export function FloorMap() {
 
       {/* Seat Grid */}
       <div className="bg-gray-900 rounded-xl p-4">
-        <SeatGrid seats={seats} onSelect={setSelectedSeat} />
+        <SeatGrid seats={seats} labels={labels} onSelect={setSelectedSeat} />
 
         {/* Legend */}
         <div className="flex gap-4 mt-4 justify-center">
