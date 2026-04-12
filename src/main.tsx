@@ -6,6 +6,7 @@ import { FloorMap } from './pages/FloorMap'
 import { SeatPage } from './pages/SeatPage'
 import { LoginPage } from './pages/LoginPage'
 import { AdminPage } from './pages/AdminPage'
+import { TimetablePage } from './pages/TimetablePage'
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
@@ -15,6 +16,7 @@ createRoot(document.getElementById('root')!).render(
         <Route path="/seat/:id" element={<SeatPage />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/admin" element={<AdminPage />} />
+        <Route path="/timetable" element={<TimetablePage />} />
       </Routes>
     </BrowserRouter>
   </StrictMode>,
