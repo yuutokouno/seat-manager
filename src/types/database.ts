@@ -14,6 +14,33 @@ export type Database = {
   }
   public: {
     Tables: {
+      floor_labels: {
+        Row: {
+          height: number | null
+          id: string
+          text: string
+          width: number | null
+          x: number | null
+          y: number | null
+        }
+        Insert: {
+          height?: number | null
+          id?: string
+          text: string
+          width?: number | null
+          x?: number | null
+          y?: number | null
+        }
+        Update: {
+          height?: number | null
+          id?: string
+          text?: string
+          width?: number | null
+          x?: number | null
+          y?: number | null
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
