@@ -5,6 +5,8 @@ export type SeatWithSession = {
   id: string
   name: string
   floor: string | null
+  x: number
+  y: number
   occupant: {
     user_id: string
     started_at: string
@@ -26,6 +28,8 @@ export function useSeats() {
         id,
         name,
         floor,
+        x,
+        y,
         seat_sessions (
           user_id,
           started_at,
@@ -52,6 +56,8 @@ export function useSeats() {
         id: seat.id,
         name: seat.name,
         floor: seat.floor,
+        x: seat.x ?? 0,
+        y: seat.y ?? 0,
         occupant: active
           ? {
               user_id: active.user_id,
@@ -69,7 +75,6 @@ export function useSeats() {
   useEffect(() => {
     fetchSeats()
 
-    // Subscribe to realtime changes on seat_sessions
     const channel = supabase
       .channel('seat_sessions_changes')
       .on(
@@ -86,5 +91,5 @@ export function useSeats() {
     }
   }, [])
 
-  return { seats, isLoading }
+  return { seats, isLoading, refetch: fetchSeats }
 }

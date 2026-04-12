@@ -9,7 +9,7 @@ import { supabase } from '../lib/supabase'
 import type { SeatWithSession } from '../hooks/useSeats'
 
 export function FloorMap() {
-  const { user } = useAuth()
+  const { user, role } = useAuth()
   const { seats, isLoading } = useSeats()
   const { occupy, leave } = useSession()
   const navigate = useNavigate()
@@ -66,6 +66,14 @@ export function FloorMap() {
           <span className="bg-green-600 text-white px-3 py-1 rounded-full text-sm font-semibold">
             残り {vacantCount} 席
           </span>
+          {role === 'admin' && (
+            <button
+              onClick={() => navigate('/admin')}
+              className="text-gray-400 text-sm hover:text-white transition-colors"
+            >
+              管理
+            </button>
+          )}
           {user ? (
             <button
               onClick={() => supabase.auth.signOut()}
