@@ -147,12 +147,24 @@ export function TimetablePage() {
 
   const sortedSeats = [...seats].sort((a, b) => a.name.localeCompare(b.name))
 
-  // Time slots for select
-  const timeSlots = Array.from({ length: 48 }, (_, i) => {
+  // Time slots for select (filter past times if today)
+  const allTimeSlots = Array.from({ length: 48 }, (_, i) => {
     const h = Math.floor(i / 2)
     const m = i % 2 === 0 ? '00' : '30'
     return `${String(h).padStart(2, '0')}:${m}`
   })
+
+  const getFilteredTimeSlots = (dateStr: string) => {
+    if (dateStr === today) {
+      const now = new Date()
+      const h = now.getHours()
+      const m = now.getMinutes() < 30 ? 30 : 0
+      const nextH = now.getMinutes() < 30 ? h : h + 1
+      const currentSlot = `${String(nextH).padStart(2, '0')}:${String(m).padStart(2, '0')}`
+      return allTimeSlots.filter((slot) => slot >= currentSlot)
+    }
+    return allTimeSlots
+  }
 
   return (
     <div className="min-h-screen bg-gray-950 text-white p-4">
@@ -267,7 +279,13 @@ export function TimetablePage() {
                   type="date"
                   value={modalDate}
                   min={today}
-                  onChange={(e) => setModalDate(e.target.value)}
+                  onChange={(e) => {
+                    setModalDate(e.target.value)
+                    if (e.target.value === today) {
+                      const slots = getFilteredTimeSlots(e.target.value)
+                      if (slots.length > 0) setModalTime(slots[0])
+                    }
+                  }}
                   className="w-full bg-gray-800 text-white px-4 py-2 rounded-lg border border-gray-700 focus:border-blue-500 focus:outline-none"
                 />
               </div>
@@ -279,7 +297,7 @@ export function TimetablePage() {
                   onChange={(e) => setModalTime(e.target.value)}
                   className="w-full bg-gray-800 text-white px-4 py-2 rounded-lg border border-gray-700 focus:border-blue-500 focus:outline-none"
                 >
-                  {timeSlots.map((slot) => (
+                  {getFilteredTimeSlots(modalDate).map((slot) => (
                     <option key={slot} value={slot}>{slot}</option>
                   ))}
                 </select>
@@ -293,7 +311,7 @@ export function TimetablePage() {
                   className="w-full bg-gray-800 text-white px-4 py-2 rounded-lg border border-gray-700 focus:border-blue-500 focus:outline-none"
                 >
                   <option value="">指定なし（終日）</option>
-                  {timeSlots.filter((slot) => slot > modalTime).map((slot) => (
+                  {allTimeSlots.filter((slot) => slot > modalTime).map((slot) => (
                     <option key={slot} value={slot}>{slot}</option>
                   ))}
                 </select>
