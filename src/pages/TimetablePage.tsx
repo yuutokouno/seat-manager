@@ -7,7 +7,6 @@ import type { Reservation } from '../hooks/useReservations'
 
 type ViewMode = 'day' | 'week' | 'month'
 
-const HOURS = Array.from({ length: 24 }, (_, i) => i)
 
 function getLocalDateStr(date: Date): string {
   const y = date.getFullYear()
@@ -105,12 +104,12 @@ export function TimetablePage() {
   const getSeatName = (seatId: string) =>
     seats.find((s) => s.id === seatId)?.name ?? '不明'
 
-  const handleTimeClick = (dateStr: string, hour: number) => {
+  const handleTimeClick = (dateStr: string, timeSlot: string, seatId?: string) => {
     if (!user) return
     setModalDate(dateStr)
-    setModalTime(`${String(hour).padStart(2, '0')}:00`)
+    setModalTime(timeSlot)
     setModalEndTime('')
-    setModalSeatId(seats[0]?.id ?? '')
+    setModalSeatId(seatId ?? seats[0]?.id ?? '')
     setShowModal(true)
   }
 
@@ -230,9 +229,8 @@ export function TimetablePage() {
           today={today}
           getSeatName={getSeatName}
           onDateClick={(dateStr) => {
-            const [y, m, d] = dateStr.split('-').map(Number)
-            setCurrentDate(new Date(y, m - 1, d))
-            setViewMode('day')
+            const slots = getFilteredTimeSlots(dateStr)
+            handleTimeClick(dateStr, slots[0] ?? '09:00')
           }}
         />
       ) : viewMode === 'week' ? (
@@ -252,14 +250,8 @@ export function TimetablePage() {
           seats={sortedSeats}
           user={user}
           getReservationTime={getReservationTime}
-          onSeatTimeClick={(seatId, hour) => {
-            if (!user) return
-            const dateStr = getLocalDateStr(currentDate)
-            setModalDate(dateStr)
-            setModalTime(`${String(hour).padStart(2, '0')}:00`)
-            setModalEndTime('')
-            setModalSeatId(seatId)
-            setShowModal(true)
+          onSeatTimeClick={(seatId, slot) => {
+            handleTimeClick(getLocalDateStr(currentDate), slot, seatId)
           }}
           onCancel={handleCancel}
         />
@@ -360,7 +352,7 @@ function DayView({
   seats: { id: string; name: string }[]
   user: { id: string } | null
   getReservationTime: (r: Reservation) => string
-  onSeatTimeClick: (seatId: string, hour: number) => void
+  onSeatTimeClick: (seatId: string, slot: string) => void
   onCancel: (id: string) => void
 }) {
   const dateStr = getLocalDateStr(currentDate)
@@ -424,7 +416,7 @@ function DayView({
                     <td
                       key={seat.id}
                       className="px-2 py-1 border-b border-gray-800/50 cursor-pointer hover:bg-gray-800 transition-colors"
-                      onClick={() => onSeatTimeClick(seat.id, parseInt(slot.split(':')[0]))}
+                      onClick={() => onSeatTimeClick(seat.id, slot)}
                     />
                   )
                 }
@@ -477,7 +469,7 @@ function WeekView({
   user: { id: string } | null
   getSeatName: (id: string) => string
   getReservationTime: (r: Reservation) => string
-  onTimeClick: (dateStr: string, hour: number) => void
+  onTimeClick: (dateStr: string, timeSlot: string, seatId?: string) => void
   onCancel: (id: string) => void
 }) {
   const weekDates = getWeekDates(currentDate)
@@ -510,41 +502,46 @@ function WeekView({
           </tr>
         </thead>
         <tbody>
-          {HOURS.map((hour) => (
-            <tr key={hour}>
-              <td className="sticky left-0 bg-gray-900 z-5 px-2 py-1 text-xs text-gray-500 font-mono border-r border-gray-800/50 border-b border-gray-800/50">
-                {String(hour).padStart(2, '0')}
-              </td>
-              {weekDates.map((date, i) => {
-                const dateStr = getLocalDateStr(date)
-                const hourStr = String(hour).padStart(2, '0')
-                const hourReservations = reservations.filter((r) => {
-                  if (r.date !== dateStr) return false
-                  return getReservationTime(r).startsWith(hourStr + ':')
-                })
+          {Array.from({ length: 48 }, (_, i) => {
+            const h = Math.floor(i / 2)
+            const m = i % 2 === 0 ? '00' : '30'
+            const slot = `${String(h).padStart(2, '0')}:${m}`
 
-                return (
-                  <td
-                    key={i}
-                    className="px-1 py-1 border-b border-gray-800/50 border-r border-gray-800/50 align-top cursor-pointer hover:bg-gray-800/30 transition-colors min-h-[48px]"
-                    onClick={() => onTimeClick(dateStr, hour)}
-                  >
-                    {hourReservations.map((r) => (
-                      <ReservationBlock
-                        key={r.id}
-                        reservation={r}
-                        getSeatName={getSeatName}
-                        getTime={getReservationTime}
-                        isOwner={user?.id === r.user_id}
-                        onCancel={onCancel}
-                        compact
-                      />
-                    ))}
-                  </td>
-                )
-              })}
-            </tr>
-          ))}
+            return (
+              <tr key={slot}>
+                <td className="sticky left-0 bg-gray-900 z-5 px-2 py-1 text-xs text-gray-500 font-mono border-r border-gray-800/50 border-b border-gray-800/50">
+                  {slot}
+                </td>
+                {weekDates.map((date, di) => {
+                  const dateStr = getLocalDateStr(date)
+                  const slotReservations = reservations.filter((r) => {
+                    if (r.date !== dateStr) return false
+                    return getReservationTime(r) === slot
+                  })
+
+                  return (
+                    <td
+                      key={di}
+                      className="px-1 py-1 border-b border-gray-800/50 border-r border-gray-800/50 align-top cursor-pointer hover:bg-gray-800/30 transition-colors"
+                      onClick={() => onTimeClick(dateStr, slot)}
+                    >
+                      {slotReservations.map((r) => (
+                        <ReservationBlock
+                          key={r.id}
+                          reservation={r}
+                          getSeatName={getSeatName}
+                          getTime={getReservationTime}
+                          isOwner={user?.id === r.user_id}
+                          onCancel={onCancel}
+                          compact
+                        />
+                      ))}
+                    </td>
+                  )
+                })}
+              </tr>
+            )
+          })}
         </tbody>
       </table>
     </div>
