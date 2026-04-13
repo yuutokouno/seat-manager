@@ -123,12 +123,24 @@ export function useReservations() {
 
     const expiresAt = new Date(startsAt.getTime() + 30 * 60 * 1000)
 
+    // If no end time specified, auto-limit to the next reservation on the same seat
+    let effectiveEndsAt = endsAt ? endsAt.toISOString() : null
+    if (!endsAt && seatReservations && seatReservations.length > 0) {
+      const laterReservations = seatReservations
+        .filter((r) => new Date(r.starts_at) > startsAt)
+        .sort((a, b) => new Date(a.starts_at).getTime() - new Date(b.starts_at).getTime())
+
+      if (laterReservations.length > 0) {
+        effectiveEndsAt = laterReservations[0].starts_at
+      }
+    }
+
     const { error } = await supabase.from('seat_reservations').insert({
       seat_id: seatId,
       user_id: userId,
       date,
       starts_at: startsAt.toISOString(),
-      ends_at: endsAt ? endsAt.toISOString() : null,
+      ends_at: effectiveEndsAt,
       expires_at: expiresAt.toISOString(),
     })
 
