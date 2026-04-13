@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
 import { useSeats } from '../hooks/useSeats'
@@ -20,7 +20,7 @@ export function FloorMap() {
   const { seats, isLoading } = useSeats()
   const { labels } = useLabels()
   const { occupy, leave } = useSession()
-  const { reservations, reserve, cancelReservation } = useReservations()
+  const { reservations, penaltyCount, fetchPenaltyCount, reserve, cancelReservation } = useReservations()
   const navigate = useNavigate()
 
   const [selectedSeat, setSelectedSeat] = useState<SeatWithSession | null>(null)
@@ -31,6 +31,11 @@ export function FloorMap() {
     return saved ? Number(saved) : 0
   })
 
+  useEffect(() => {
+    if (user) fetchPenaltyCount(user.id)
+  }, [user])
+
+  const PENALTY_THRESHOLD = 3
   const MAX_RESERVATIONS = 3
   const vacantCount = seats.filter((s) => s.occupant === null).length
   const myReservations = user
@@ -127,6 +132,13 @@ export function FloorMap() {
           {user && (
             <span className="bg-yellow-600 text-white px-2 py-0.5 rounded-full text-xs font-semibold">
               予約 {remainingSlots}/{MAX_RESERVATIONS}
+            </span>
+          )}
+          {user && penaltyCount > 0 && (
+            <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${
+              penaltyCount >= PENALTY_THRESHOLD ? 'bg-red-600 text-white' : 'bg-orange-500 text-white'
+            }`}>
+              ペナルティ {penaltyCount}/{PENALTY_THRESHOLD}
             </span>
           )}
           <button
