@@ -18,23 +18,46 @@ export default {
     }
 
     try {
-      // Daily reset: close all active sessions (runs at 0:00 JST / 15:00 UTC)
+      // Daily reset: close all active sessions + past reservations (runs at 0:00 JST / 15:00 UTC)
       if (event.cron === '0 15 * * *') {
-        const response = await fetch(
+        const now = new Date()
+        const today = now.toISOString().split('T')[0]
+
+        // Close all active seat sessions
+        const sessionResponse = await fetch(
           `${env.SUPABASE_URL}/rest/v1/seat_sessions?ended_at=is.null`,
           {
             method: 'PATCH',
             headers: headersMinimal,
             body: JSON.stringify({
-              ended_at: new Date().toISOString(),
+              ended_at: now.toISOString(),
             }),
           }
         )
 
-        if (!response.ok) {
-          console.error('Failed to reset seats:', await response.text())
+        if (!sessionResponse.ok) {
+          console.error('Failed to reset seats:', await sessionResponse.text())
         } else {
           console.log('All seats reset successfully')
+        }
+
+        // Close all past reservations that are still active
+        const reservationResponse = await fetch(
+          `${env.SUPABASE_URL}/rest/v1/seat_reservations?canceled_at=is.null&date=lt.${today}`,
+          {
+            method: 'PATCH',
+            headers: headersMinimal,
+            body: JSON.stringify({
+              canceled_at: now.toISOString(),
+              cancel_type: 'auto',
+            }),
+          }
+        )
+
+        if (!reservationResponse.ok) {
+          console.error('Failed to close past reservations:', await reservationResponse.text())
+        } else {
+          console.log('Past reservations closed successfully')
         }
       }
 
