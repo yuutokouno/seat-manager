@@ -139,6 +139,7 @@ create table seat_reservations (
   date date not null,
   starts_at timestamptz not null,
   expires_at timestamptz not null,
+  ends_at timestamptz,
   seated boolean default false,
   canceled_at timestamptz,
   cancel_type text,
