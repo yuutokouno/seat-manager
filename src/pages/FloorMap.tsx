@@ -26,6 +26,7 @@ export function FloorMap() {
   const [selectedSeat, setSelectedSeat] = useState<SeatWithSession | null>(null)
   const [actionMessage, setActionMessage] = useState<string | null>(null)
   const [sheetMode, setSheetMode] = useState<BottomSheetMode>('info')
+  const [rotationStep, setRotationStep] = useState(0)
 
   const MAX_RESERVATIONS = 3
   const vacantCount = seats.filter((s) => s.occupant === null).length
@@ -159,10 +160,19 @@ export function FloorMap() {
 
       {/* Seat Grid */}
       <div className="bg-gray-900 rounded-xl p-4">
+        <div className="flex justify-end mb-2">
+          <button
+            onClick={() => setRotationStep((s) => s + 1)}
+            className="text-gray-400 text-sm hover:text-white transition-colors px-2 py-1"
+          >
+            🔄 回転
+          </button>
+        </div>
         <SeatGrid
           seats={seats}
           labels={labels}
           reservations={reservations}
+          rotation={rotationStep * 90}
           onSelect={(seat) => {
             setSelectedSeat(seat)
             setSheetMode('info')
