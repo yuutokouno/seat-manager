@@ -265,7 +265,6 @@ export function TimetablePage() {
           getSeatName={getSeatName}
           getReservationTime={getReservationTime}
           onTimeClick={handleTimeClick}
-          onCancel={handleCancel}
           onEdit={handleEditClick}
         />
       ) : (
@@ -288,91 +287,169 @@ export function TimetablePage() {
         <>
           <div className="fixed inset-0 bg-black/60 z-40" onClick={() => setShowModal(false)} />
           <div className="fixed inset-x-4 top-1/2 -translate-y-1/2 bg-gray-900 rounded-2xl p-6 z-50 max-w-md mx-auto">
-            <h2 className="text-lg font-bold mb-4">{editingReservationId ? '予約を編集' : '予約を作成'}</h2>
+            {editingReservationId ? (
+              <>
+                <h2 className="text-lg font-bold mb-4">予約の編集</h2>
 
-            <div className="space-y-4">
-              <div>
-                <label className="text-sm text-gray-400 block mb-1">日付</label>
-                <input
-                  type="date"
-                  value={modalDate}
-                  min={today}
-                  onChange={(e) => {
-                    setModalDate(e.target.value)
-                    if (e.target.value === today) {
-                      const slots = getFilteredTimeSlots(e.target.value)
-                      if (slots.length > 0) setModalTime(slots[0])
-                    }
+                <div className="space-y-4">
+                  <div>
+                    <label className="text-sm text-gray-400 block mb-1">日付</label>
+                    <input
+                      type="date"
+                      value={modalDate}
+                      min={today}
+                      onChange={(e) => {
+                        setModalDate(e.target.value)
+                        if (e.target.value === today) {
+                          const slots = getFilteredTimeSlots(e.target.value)
+                          if (slots.length > 0) setModalTime(slots[0])
+                        }
+                      }}
+                      className="w-full bg-gray-800 text-white px-4 py-2 rounded-lg border border-gray-700 focus:border-blue-500 focus:outline-none"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-sm text-gray-400 block mb-1">開始時間</label>
+                    <select
+                      value={modalTime}
+                      onChange={(e) => setModalTime(e.target.value)}
+                      className="w-full bg-gray-800 text-white px-4 py-2 rounded-lg border border-gray-700 focus:border-blue-500 focus:outline-none"
+                    >
+                      {getFilteredTimeSlots(modalDate).map((slot) => (
+                        <option key={slot} value={slot}>{slot}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="text-sm text-gray-400 block mb-1">終了時間（空欄 = 終日）</label>
+                    <select
+                      value={modalEndTime}
+                      onChange={(e) => setModalEndTime(e.target.value)}
+                      className="w-full bg-gray-800 text-white px-4 py-2 rounded-lg border border-gray-700 focus:border-blue-500 focus:outline-none"
+                    >
+                      <option value="">指定なし（終日）</option>
+                      {allTimeSlots.filter((slot) => slot > modalTime).map((slot) => (
+                        <option key={slot} value={slot}>{slot}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="text-sm text-gray-400 block mb-1">席</label>
+                    <select
+                      value={modalSeatId}
+                      onChange={(e) => setModalSeatId(e.target.value)}
+                      className="w-full bg-gray-800 text-white px-4 py-2 rounded-lg border border-gray-700 focus:border-blue-500 focus:outline-none"
+                    >
+                      {sortedSeats.map((seat) => (
+                        <option key={seat.id} value={seat.id}>{seat.name}</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
+                <button
+                  onClick={handleReserve}
+                  className="w-full mt-6 bg-blue-600 hover:bg-blue-500 text-white py-3 rounded-lg font-medium transition-colors"
+                >
+                  変更を保存
+                </button>
+                <button
+                  onClick={async () => {
+                    await handleCancel(editingReservationId)
+                    setShowModal(false)
+                    setEditingReservationId(null)
                   }}
-                  className="w-full bg-gray-800 text-white px-4 py-2 rounded-lg border border-gray-700 focus:border-blue-500 focus:outline-none"
-                />
-              </div>
-
-              <div>
-                <label className="text-sm text-gray-400 block mb-1">開始時間</label>
-                <select
-                  value={modalTime}
-                  onChange={(e) => setModalTime(e.target.value)}
-                  className="w-full bg-gray-800 text-white px-4 py-2 rounded-lg border border-gray-700 focus:border-blue-500 focus:outline-none"
+                  className="w-full mt-2 bg-red-600 hover:bg-red-500 text-white py-3 rounded-lg font-medium transition-colors"
                 >
-                  {getFilteredTimeSlots(modalDate).map((slot) => (
-                    <option key={slot} value={slot}>{slot}</option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="text-sm text-gray-400 block mb-1">終了時間（空欄 = 終日）</label>
-                <select
-                  value={modalEndTime}
-                  onChange={(e) => setModalEndTime(e.target.value)}
-                  className="w-full bg-gray-800 text-white px-4 py-2 rounded-lg border border-gray-700 focus:border-blue-500 focus:outline-none"
+                  この予約を削除
+                </button>
+                <button
+                  onClick={() => { setShowModal(false); setEditingReservationId(null) }}
+                  className="w-full mt-2 text-gray-400 text-sm hover:text-white transition-colors py-2"
                 >
-                  <option value="">指定なし（終日）</option>
-                  {allTimeSlots.filter((slot) => slot > modalTime).map((slot) => (
-                    <option key={slot} value={slot}>{slot}</option>
-                  ))}
-                </select>
-              </div>
+                  キャンセル
+                </button>
+              </>
+            ) : (
+              <>
+                <h2 className="text-lg font-bold mb-4">予約を作成</h2>
 
-              <div>
-                <label className="text-sm text-gray-400 block mb-1">席</label>
-                <select
-                  value={modalSeatId}
-                  onChange={(e) => setModalSeatId(e.target.value)}
-                  className="w-full bg-gray-800 text-white px-4 py-2 rounded-lg border border-gray-700 focus:border-blue-500 focus:outline-none"
+                <div className="space-y-4">
+                  <div>
+                    <label className="text-sm text-gray-400 block mb-1">日付</label>
+                    <input
+                      type="date"
+                      value={modalDate}
+                      min={today}
+                      onChange={(e) => {
+                        setModalDate(e.target.value)
+                        if (e.target.value === today) {
+                          const slots = getFilteredTimeSlots(e.target.value)
+                          if (slots.length > 0) setModalTime(slots[0])
+                        }
+                      }}
+                      className="w-full bg-gray-800 text-white px-4 py-2 rounded-lg border border-gray-700 focus:border-blue-500 focus:outline-none"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-sm text-gray-400 block mb-1">開始時間</label>
+                    <select
+                      value={modalTime}
+                      onChange={(e) => setModalTime(e.target.value)}
+                      className="w-full bg-gray-800 text-white px-4 py-2 rounded-lg border border-gray-700 focus:border-blue-500 focus:outline-none"
+                    >
+                      {getFilteredTimeSlots(modalDate).map((slot) => (
+                        <option key={slot} value={slot}>{slot}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="text-sm text-gray-400 block mb-1">終了時間（空欄 = 終日）</label>
+                    <select
+                      value={modalEndTime}
+                      onChange={(e) => setModalEndTime(e.target.value)}
+                      className="w-full bg-gray-800 text-white px-4 py-2 rounded-lg border border-gray-700 focus:border-blue-500 focus:outline-none"
+                    >
+                      <option value="">指定なし（終日）</option>
+                      {allTimeSlots.filter((slot) => slot > modalTime).map((slot) => (
+                        <option key={slot} value={slot}>{slot}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="text-sm text-gray-400 block mb-1">席</label>
+                    <select
+                      value={modalSeatId}
+                      onChange={(e) => setModalSeatId(e.target.value)}
+                      className="w-full bg-gray-800 text-white px-4 py-2 rounded-lg border border-gray-700 focus:border-blue-500 focus:outline-none"
+                    >
+                      {sortedSeats.map((seat) => (
+                        <option key={seat.id} value={seat.id}>{seat.name}</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
+                <button
+                  onClick={handleReserve}
+                  className="w-full mt-6 bg-yellow-600 hover:bg-yellow-500 text-white py-3 rounded-lg font-medium transition-colors"
                 >
-                  {sortedSeats.map((seat) => (
-                    <option key={seat.id} value={seat.id}>{seat.name}</option>
-                  ))}
-                </select>
-              </div>
-            </div>
-
-            <button
-              onClick={handleReserve}
-              className="w-full mt-6 bg-yellow-600 hover:bg-yellow-500 text-white py-3 rounded-lg font-medium transition-colors"
-            >
-              {editingReservationId ? '更新する' : '予約する'}
-            </button>
-            {editingReservationId && (
-              <button
-                onClick={async () => {
-                  await handleCancel(editingReservationId)
-                  setShowModal(false)
-                  setEditingReservationId(null)
-                }}
-                className="w-full mt-2 bg-red-600 hover:bg-red-500 text-white py-3 rounded-lg font-medium transition-colors"
-              >
-                予約を削除する
-              </button>
+                  予約する
+                </button>
+                <button
+                  onClick={() => { setShowModal(false); setEditingReservationId(null) }}
+                  className="w-full mt-2 text-gray-400 text-sm hover:text-white transition-colors py-2"
+                >
+                  キャンセル
+                </button>
+              </>
             )}
-            <button
-              onClick={() => { setShowModal(false); setEditingReservationId(null) }}
-              className="w-full mt-2 text-gray-400 text-sm hover:text-white transition-colors py-2"
-            >
-              キャンセル
-            </button>
           </div>
         </>
       )}
@@ -502,7 +579,7 @@ function DayView({
 // ========== Week View ==========
 
 function WeekView({
-  currentDate, reservations, user, getSeatName, getReservationTime, onTimeClick, onCancel, onEdit,
+  currentDate, reservations, user, getSeatName, getReservationTime, onTimeClick, onEdit,
 }: {
   currentDate: Date
   reservations: Reservation[]
@@ -510,12 +587,36 @@ function WeekView({
   getSeatName: (id: string) => string
   getReservationTime: (r: Reservation) => string
   onTimeClick: (dateStr: string, timeSlot: string, seatId?: string) => void
-  onCancel: (id: string) => void
   onEdit: (reservation: Reservation) => void
 }) {
   const weekDates = getWeekDates(currentDate)
   const dayNames = ['月', '火', '水', '木', '金', '土', '日']
   const today = getLocalDateStr(new Date())
+
+  const TIME_SLOTS_30 = Array.from({ length: 48 }, (_, i) => {
+    const h = Math.floor(i / 2)
+    const m = i % 2 === 0 ? '00' : '30'
+    return `${String(h).padStart(2, '0')}:${m}`
+  })
+
+  const getCoveringReservation = (dateStr: string, timeSlot: string) => {
+    const dayReservations = reservations
+      .filter((r) => r.date === dateStr)
+      .map((r) => ({
+        ...r,
+        startSlot: getReservationTime(r),
+        endSlot: r.ends_at
+          ? new Date(r.ends_at).toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit', hour12: false })
+          : '24:00',
+      }))
+      .sort((a, b) => a.startSlot.localeCompare(b.startSlot))
+
+    for (const r of dayReservations) {
+      if (r.startSlot === timeSlot) return { reservation: r, isStart: true }
+      if (r.startSlot < timeSlot && timeSlot < r.endSlot) return { reservation: r, isStart: false }
+    }
+    return null
+  }
 
   return (
     <div className="bg-gray-900 rounded-xl overflow-auto" style={{ maxHeight: 'calc(100vh - 280px)' }}>
@@ -543,47 +644,50 @@ function WeekView({
           </tr>
         </thead>
         <tbody>
-          {Array.from({ length: 48 }, (_, i) => {
-            const h = Math.floor(i / 2)
-            const m = i % 2 === 0 ? '00' : '30'
-            const slot = `${String(h).padStart(2, '0')}:${m}`
+          {TIME_SLOTS_30.map((slot) => (
+            <tr key={slot}>
+              <td className="sticky left-0 bg-gray-900 z-5 px-2 py-1 text-xs text-gray-500 font-mono border-r border-gray-800/50 border-b border-gray-800/50">
+                {slot}
+              </td>
+              {weekDates.map((date, di) => {
+                const dateStr = getLocalDateStr(date)
+                const covering = getCoveringReservation(dateStr, slot)
 
-            return (
-              <tr key={slot}>
-                <td className="sticky left-0 bg-gray-900 z-5 px-2 py-1 text-xs text-gray-500 font-mono border-r border-gray-800/50 border-b border-gray-800/50">
-                  {slot}
-                </td>
-                {weekDates.map((date, di) => {
-                  const dateStr = getLocalDateStr(date)
-                  const slotReservations = reservations.filter((r) => {
-                    if (r.date !== dateStr) return false
-                    return getReservationTime(r) === slot
-                  })
-
+                if (!covering) {
                   return (
                     <td
                       key={di}
-                      className="px-1 py-1 border-b border-gray-800/50 border-r border-gray-800/50 align-top cursor-pointer hover:bg-gray-800/30 transition-colors"
+                      className="px-1 py-1 border-b border-gray-800/50 border-r border-gray-800/50 cursor-pointer hover:bg-gray-800/30 transition-colors"
                       onClick={() => onTimeClick(dateStr, slot)}
-                    >
-                      {slotReservations.map((r) => (
-                        <ReservationBlock
-                          key={r.id}
-                          reservation={r}
-                          getSeatName={getSeatName}
-                          getTime={getReservationTime}
-                          isOwner={user?.id === r.user_id}
-                          onCancel={onCancel}
-                          onEdit={onEdit}
-                          compact
-                        />
-                      ))}
-                    </td>
+                    />
                   )
-                })}
-              </tr>
-            )
-          })}
+                }
+
+                const { reservation, isStart } = covering
+                const isOwner = user?.id === reservation.user_id
+
+                return (
+                  <td
+                    key={di}
+                    className={`px-1 py-1 border-b border-gray-800/50 border-r border-gray-800/50 text-center text-xs ${isOwner ? 'cursor-pointer hover:brightness-125' : ''}`}
+                    style={{ backgroundColor: userIdToColor(reservation.user_id) }}
+                    onClick={isOwner ? () => onEdit(reservation) : undefined}
+                  >
+                    {isStart ? (
+                      <div className="flex flex-col items-center gap-0.5">
+                        <span className="truncate max-w-[80px] font-medium">
+                          {getSeatName(reservation.seat_id)}
+                        </span>
+                        <span className="opacity-70 text-[10px]">
+                          {reservation.profile?.name ?? ''}
+                        </span>
+                      </div>
+                    ) : null}
+                  </td>
+                )
+              })}
+            </tr>
+          ))}
         </tbody>
       </table>
     </div>
@@ -664,49 +768,3 @@ function MonthView({
   )
 }
 
-// ========== Reservation Block Component ==========
-
-function ReservationBlock({
-  reservation, getSeatName, getTime, isOwner, onCancel, onEdit, compact,
-}: {
-  reservation: Reservation
-  getSeatName: (id: string) => string
-  getTime: (r: Reservation) => string
-  isOwner: boolean
-  onCancel: (id: string) => void
-  onEdit?: (reservation: Reservation) => void
-  compact?: boolean
-}) {
-  return (
-    <div
-      className={`rounded px-2 py-1 text-xs ${compact ? 'mb-0.5' : 'mb-1'} ${isOwner ? 'cursor-pointer hover:brightness-125' : ''}`}
-      style={{ backgroundColor: userIdToColor(reservation.user_id) }}
-      onClick={(e) => {
-        e.stopPropagation()
-        if (isOwner && onEdit) onEdit(reservation)
-      }}
-    >
-      <div className="flex items-center justify-between gap-1">
-        <div className="truncate">
-          {!compact && reservation.profile?.avatar_url && (
-            <img src={reservation.profile.avatar_url} alt="" className="w-4 h-4 rounded-full inline mr-1" />
-          )}
-          <span className="font-medium">{getSeatName(reservation.seat_id)}</span>
-          <span className="ml-1 opacity-80">
-            {getTime(reservation)}
-            {reservation.ends_at ? `〜${new Date(reservation.ends_at).toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit', hour12: false })}` : '〜終日'}
-          </span>
-          {!compact && <span className="ml-1 opacity-70">{reservation.profile?.name ?? ''}</span>}
-        </div>
-        {isOwner && (
-          <button
-            onClick={(e) => { e.stopPropagation(); onCancel(reservation.id) }}
-            className="text-white/70 hover:text-white text-[10px] shrink-0"
-          >
-            ✕
-          </button>
-        )}
-      </div>
-    </div>
-  )
-}
