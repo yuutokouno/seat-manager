@@ -71,6 +71,10 @@ export function useReservations() {
   }
 
   const reserve = async (seatId: string, userId: string, date: string, startsAt: Date, endsAt?: Date | null) => {
+    if (startsAt < new Date()) {
+      return { success: false, error: '過去の時間には予約できません' }
+    }
+
     const isPenalized = await checkPenalty(userId)
     if (isPenalized) {
       return { success: false, error: `直近${PENALTY_DAYS}日間に${PENALTY_THRESHOLD}回以上の無断キャンセルがあるため、予約できません` }
