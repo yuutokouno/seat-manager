@@ -20,6 +20,21 @@ export type Reservation = {
 
 export function useReservations() {
   const [reservations, setReservations] = useState<Reservation[]>([])
+  const [penaltyCount, setPenaltyCount] = useState(0)
+
+  const fetchPenaltyCount = async (userId: string) => {
+    const since = new Date()
+    since.setDate(since.getDate() - 7)
+
+    const { count } = await supabase
+      .from('seat_reservations')
+      .select('*', { count: 'exact', head: true })
+      .eq('user_id', userId)
+      .eq('cancel_type', 'auto')
+      .gte('canceled_at', since.toISOString())
+
+    setPenaltyCount(count ?? 0)
+  }
 
   const fetchReservations = async () => {
     const today = new Date().toISOString().split('T')[0]
@@ -191,5 +206,5 @@ export function useReservations() {
     return () => { supabase.removeChannel(channel) }
   }, [])
 
-  return { reservations, reserve, cancelReservation, refetchReservations: fetchReservations }
+  return { reservations, penaltyCount, fetchPenaltyCount, reserve, cancelReservation, refetchReservations: fetchReservations }
 }
