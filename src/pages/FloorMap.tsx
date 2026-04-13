@@ -26,7 +26,10 @@ export function FloorMap() {
   const [selectedSeat, setSelectedSeat] = useState<SeatWithSession | null>(null)
   const [actionMessage, setActionMessage] = useState<string | null>(null)
   const [sheetMode, setSheetMode] = useState<BottomSheetMode>('info')
-  const [rotationStep, setRotationStep] = useState(0)
+  const [rotationStep, setRotationStep] = useState(() => {
+    const saved = localStorage.getItem('seat-manager-rotation')
+    return saved ? Number(saved) : 0
+  })
 
   const MAX_RESERVATIONS = 3
   const vacantCount = seats.filter((s) => s.occupant === null).length
@@ -162,7 +165,11 @@ export function FloorMap() {
       <div className="bg-gray-900 rounded-xl p-4">
         <div className="flex justify-end mb-2">
           <button
-            onClick={() => setRotationStep((s) => s + 1)}
+            onClick={() => setRotationStep((s) => {
+              const next = s + 1
+              localStorage.setItem('seat-manager-rotation', String(next))
+              return next
+            })}
             className="text-gray-400 text-sm hover:text-white transition-colors px-2 py-1"
           >
             🔄 回転
@@ -316,12 +323,20 @@ export function FloorMap() {
                 </div>
 
                 {user && selectedSeat.occupant.user_id === user.id && (
-                  <button
-                    onClick={handleLeave}
-                    className="w-full mt-6 bg-red-600 hover:bg-red-500 text-white py-3 rounded-lg font-medium transition-colors"
-                  >
-                    退席する
-                  </button>
+                  <>
+                    <button
+                      onClick={handleLeave}
+                      className="w-full mt-6 bg-red-600 hover:bg-red-500 text-white py-3 rounded-lg font-medium transition-colors"
+                    >
+                      退席する
+                    </button>
+                    <button
+                      onClick={() => setSheetMode('reserve')}
+                      className="w-full mt-2 bg-yellow-600 hover:bg-yellow-500 text-white py-3 rounded-lg font-medium transition-colors"
+                    >
+                      この席を予約する
+                    </button>
+                  </>
                 )}
               </>
             ) : (() => {
