@@ -63,10 +63,17 @@ export function TimetablePage() {
   const [currentDate, setCurrentDate] = useState(new Date())
   const [message, setMessage] = useState<{ text: string; type: 'success' | 'error' } | null>(null)
 
+  const MAX_RESERVATIONS = 3
+  const myReservations = user
+    ? reservations.filter((r) => r.user_id === user.id)
+    : []
+  const remainingSlots = MAX_RESERVATIONS - myReservations.length
+
   // Modal state for creating reservation
   const [showModal, setShowModal] = useState(false)
   const [modalDate, setModalDate] = useState('')
   const [modalTime, setModalTime] = useState('09:00')
+  const [modalEndTime, setModalEndTime] = useState('')
   const [modalSeatId, setModalSeatId] = useState('')
 
   const today = getLocalDateStr(new Date())
@@ -102,6 +109,7 @@ export function TimetablePage() {
     if (!user) return
     setModalDate(dateStr)
     setModalTime(`${String(hour).padStart(2, '0')}:00`)
+    setModalEndTime('')
     setModalSeatId(seats[0]?.id ?? '')
     setShowModal(true)
   }
@@ -112,7 +120,13 @@ export function TimetablePage() {
     const [hours, minutes] = modalTime.split(':').map(Number)
     const startsAt = new Date(`${modalDate}T${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:00`)
 
-    const result = await reserve(modalSeatId, user.id, modalDate, startsAt)
+    let endsAt: Date | null = null
+    if (modalEndTime) {
+      const [eh, em] = modalEndTime.split(':').map(Number)
+      endsAt = new Date(`${modalDate}T${String(eh).padStart(2, '0')}:${String(em).padStart(2, '0')}:00`)
+    }
+
+    const result = await reserve(modalSeatId, user.id, modalDate, startsAt, endsAt)
     if (result.success) {
       setMessage({ text: '予約しました', type: 'success' })
       setShowModal(false)
@@ -145,9 +159,16 @@ export function TimetablePage() {
       {/* Header */}
       <div className="flex items-center justify-between mb-4">
         <h1 className="text-xl font-bold">予約カレンダー</h1>
-        <Link to="/" className="text-gray-400 text-sm hover:text-white transition-colors">
-          フロアマップに戻る
-        </Link>
+        <div className="flex items-center gap-3">
+          {user && (
+            <span className="bg-yellow-600 text-white px-2 py-0.5 rounded-full text-xs font-semibold">
+              予約 {remainingSlots}/{MAX_RESERVATIONS}
+            </span>
+          )}
+          <Link to="/" className="text-gray-400 text-sm hover:text-white transition-colors">
+            フロアマップに戻る
+          </Link>
+        </div>
       </div>
 
       {/* Message */}
@@ -251,6 +272,20 @@ export function TimetablePage() {
                   className="w-full bg-gray-800 text-white px-4 py-2 rounded-lg border border-gray-700 focus:border-blue-500 focus:outline-none"
                 >
                   {timeSlots.map((slot) => (
+                    <option key={slot} value={slot}>{slot}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="text-sm text-gray-400 block mb-1">終了時間（空欄 = 終日）</label>
+                <select
+                  value={modalEndTime}
+                  onChange={(e) => setModalEndTime(e.target.value)}
+                  className="w-full bg-gray-800 text-white px-4 py-2 rounded-lg border border-gray-700 focus:border-blue-500 focus:outline-none"
+                >
+                  <option value="">指定なし（終日）</option>
+                  {timeSlots.filter((slot) => slot > modalTime).map((slot) => (
                     <option key={slot} value={slot}>{slot}</option>
                   ))}
                 </select>
@@ -518,7 +553,10 @@ function ReservationBlock({
             <img src={reservation.profile.avatar_url} alt="" className="w-4 h-4 rounded-full inline mr-1" />
           )}
           <span className="font-medium">{getSeatName(reservation.seat_id)}</span>
-          <span className="ml-1 opacity-80">{getTime(reservation)}</span>
+          <span className="ml-1 opacity-80">
+            {getTime(reservation)}
+            {reservation.ends_at ? `〜${new Date(reservation.ends_at).toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit', hour12: false })}` : '〜終日'}
+          </span>
           {!compact && <span className="ml-1 opacity-70">{reservation.profile?.name ?? ''}</span>}
         </div>
         {isOwner && (

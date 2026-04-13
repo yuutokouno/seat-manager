@@ -7,6 +7,7 @@ export type Reservation = {
   user_id: string
   date: string
   starts_at: string
+  ends_at: string | null
   expires_at: string
   seated: boolean
   canceled_at: string | null
@@ -40,6 +41,7 @@ export function useReservations() {
       user_id: r.user_id,
       date: r.date,
       starts_at: r.starts_at,
+      ends_at: r.ends_at ?? null,
       expires_at: r.expires_at,
       seated: r.seated ?? false,
       canceled_at: r.canceled_at,
@@ -68,7 +70,7 @@ export function useReservations() {
     return (count ?? 0) >= PENALTY_THRESHOLD
   }
 
-  const reserve = async (seatId: string, userId: string, date: string, startsAt: Date) => {
+  const reserve = async (seatId: string, userId: string, date: string, startsAt: Date, endsAt?: Date | null) => {
     const isPenalized = await checkPenalty(userId)
     if (isPenalized) {
       return { success: false, error: `直近${PENALTY_DAYS}日間に${PENALTY_THRESHOLD}回以上の無断キャンセルがあるため、予約できません` }
@@ -126,6 +128,7 @@ export function useReservations() {
       user_id: userId,
       date,
       starts_at: startsAt.toISOString(),
+      ends_at: endsAt ? endsAt.toISOString() : null,
       expires_at: expiresAt.toISOString(),
     })
 
