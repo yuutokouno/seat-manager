@@ -68,8 +68,9 @@ export function TimetablePage() {
     : []
   const remainingSlots = MAX_RESERVATIONS - myReservations.length
 
-  // Modal state for creating reservation
+  // Modal state for creating/editing reservation
   const [showModal, setShowModal] = useState(false)
+  const [editingReservationId, setEditingReservationId] = useState<string | null>(null)
   const [modalDate, setModalDate] = useState('')
   const [modalTime, setModalTime] = useState('09:00')
   const [modalEndTime, setModalEndTime] = useState('')
@@ -106,6 +107,7 @@ export function TimetablePage() {
 
   const handleTimeClick = (dateStr: string, timeSlot: string, seatId?: string) => {
     if (!user) return
+    setEditingReservationId(null)
     setModalDate(dateStr)
     setModalTime(timeSlot)
     setModalEndTime('')
@@ -113,8 +115,27 @@ export function TimetablePage() {
     setShowModal(true)
   }
 
+  const handleEditClick = (reservation: Reservation) => {
+    if (!user || reservation.user_id !== user.id) return
+    setEditingReservationId(reservation.id)
+    setModalDate(reservation.date)
+    setModalTime(getReservationTime(reservation))
+    setModalEndTime(
+      reservation.ends_at
+        ? new Date(reservation.ends_at).toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit', hour12: false })
+        : ''
+    )
+    setModalSeatId(reservation.seat_id)
+    setShowModal(true)
+  }
+
   const handleReserve = async () => {
     if (!user || !modalSeatId) return
+
+    // If editing, cancel old reservation first
+    if (editingReservationId) {
+      await cancelReservation(editingReservationId)
+    }
 
     const [hours, minutes] = modalTime.split(':').map(Number)
     const startsAt = new Date(`${modalDate}T${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:00`)
@@ -127,8 +148,9 @@ export function TimetablePage() {
 
     const result = await reserve(modalSeatId, user.id, modalDate, startsAt, endsAt)
     if (result.success) {
-      setMessage({ text: '予約しました', type: 'success' })
+      setMessage({ text: editingReservationId ? '予約を更新しました' : '予約しました', type: 'success' })
       setShowModal(false)
+      setEditingReservationId(null)
     } else {
       setMessage({ text: result.error ?? '予約に失敗しました', type: 'error' })
     }
@@ -227,11 +249,13 @@ export function TimetablePage() {
           currentDate={currentDate}
           reservations={reservations}
           today={today}
+          user={user}
           getSeatName={getSeatName}
           onDateClick={(dateStr) => {
             const slots = getFilteredTimeSlots(dateStr)
             handleTimeClick(dateStr, slots[0] ?? '09:00')
           }}
+          onEdit={handleEditClick}
         />
       ) : viewMode === 'week' ? (
         <WeekView
@@ -242,6 +266,7 @@ export function TimetablePage() {
           getReservationTime={getReservationTime}
           onTimeClick={handleTimeClick}
           onCancel={handleCancel}
+          onEdit={handleEditClick}
         />
       ) : (
         <DayView
@@ -254,6 +279,7 @@ export function TimetablePage() {
             handleTimeClick(getLocalDateStr(currentDate), slot, seatId)
           }}
           onCancel={handleCancel}
+          onEdit={handleEditClick}
         />
       )}
 
@@ -262,7 +288,7 @@ export function TimetablePage() {
         <>
           <div className="fixed inset-0 bg-black/60 z-40" onClick={() => setShowModal(false)} />
           <div className="fixed inset-x-4 top-1/2 -translate-y-1/2 bg-gray-900 rounded-2xl p-6 z-50 max-w-md mx-auto">
-            <h2 className="text-lg font-bold mb-4">予約を作成</h2>
+            <h2 className="text-lg font-bold mb-4">{editingReservationId ? '予約を編集' : '予約を作成'}</h2>
 
             <div className="space-y-4">
               <div>
@@ -327,10 +353,22 @@ export function TimetablePage() {
               onClick={handleReserve}
               className="w-full mt-6 bg-yellow-600 hover:bg-yellow-500 text-white py-3 rounded-lg font-medium transition-colors"
             >
-              予約する
+              {editingReservationId ? '更新する' : '予約する'}
             </button>
+            {editingReservationId && (
+              <button
+                onClick={async () => {
+                  await handleCancel(editingReservationId)
+                  setShowModal(false)
+                  setEditingReservationId(null)
+                }}
+                className="w-full mt-2 bg-red-600 hover:bg-red-500 text-white py-3 rounded-lg font-medium transition-colors"
+              >
+                予約を削除する
+              </button>
+            )}
             <button
-              onClick={() => setShowModal(false)}
+              onClick={() => { setShowModal(false); setEditingReservationId(null) }}
               className="w-full mt-2 text-gray-400 text-sm hover:text-white transition-colors py-2"
             >
               キャンセル
@@ -345,7 +383,7 @@ export function TimetablePage() {
 // ========== Day View ==========
 
 function DayView({
-  currentDate, reservations, seats, user, getReservationTime, onSeatTimeClick, onCancel,
+  currentDate, reservations, seats, user, getReservationTime, onSeatTimeClick, onCancel, onEdit,
 }: {
   currentDate: Date
   reservations: Reservation[]
@@ -354,6 +392,7 @@ function DayView({
   getReservationTime: (r: Reservation) => string
   onSeatTimeClick: (seatId: string, slot: string) => void
   onCancel: (id: string) => void
+  onEdit: (reservation: Reservation) => void
 }) {
   const dateStr = getLocalDateStr(currentDate)
   const dayReservations = reservations.filter((r) => r.date === dateStr)
@@ -427,8 +466,9 @@ function DayView({
                 return (
                   <td
                     key={seat.id}
-                    className="px-1 py-1 border-b border-gray-800/50 text-center text-xs"
+                    className={`px-1 py-1 border-b border-gray-800/50 text-center text-xs ${isOwner ? 'cursor-pointer hover:brightness-125' : ''}`}
                     style={{ backgroundColor: userIdToColor(reservation.user_id) }}
+                    onClick={isOwner ? () => onEdit(reservation) : undefined}
                   >
                     {isStart ? (
                       <div className="flex flex-col items-center gap-0.5">
@@ -462,7 +502,7 @@ function DayView({
 // ========== Week View ==========
 
 function WeekView({
-  currentDate, reservations, user, getSeatName, getReservationTime, onTimeClick, onCancel,
+  currentDate, reservations, user, getSeatName, getReservationTime, onTimeClick, onCancel, onEdit,
 }: {
   currentDate: Date
   reservations: Reservation[]
@@ -471,6 +511,7 @@ function WeekView({
   getReservationTime: (r: Reservation) => string
   onTimeClick: (dateStr: string, timeSlot: string, seatId?: string) => void
   onCancel: (id: string) => void
+  onEdit: (reservation: Reservation) => void
 }) {
   const weekDates = getWeekDates(currentDate)
   const dayNames = ['月', '火', '水', '木', '金', '土', '日']
@@ -533,6 +574,7 @@ function WeekView({
                           getTime={getReservationTime}
                           isOwner={user?.id === r.user_id}
                           onCancel={onCancel}
+                          onEdit={onEdit}
                           compact
                         />
                       ))}
@@ -551,13 +593,15 @@ function WeekView({
 // ========== Month View ==========
 
 function MonthView({
-  currentDate, reservations, today, getSeatName, onDateClick,
+  currentDate, reservations, today, user, getSeatName, onDateClick, onEdit,
 }: {
   currentDate: Date
   reservations: Reservation[]
   today: string
+  user: { id: string } | null
   getSeatName: (id: string) => string
   onDateClick: (dateStr: string) => void
+  onEdit: (reservation: Reservation) => void
 }) {
   const weeks = getMonthDates(currentDate.getFullYear(), currentDate.getMonth())
   const dayNames = ['月', '火', '水', '木', '金', '土', '日']
@@ -593,15 +637,19 @@ function MonthView({
                 }`}>
                   {date.getDate()}
                 </div>
-                {dayReservations.slice(0, 3).map((r) => (
-                  <div
-                    key={r.id}
-                    className="text-[10px] truncate rounded px-1 py-0.5 mb-0.5"
-                    style={{ backgroundColor: userIdToColor(r.user_id) }}
-                  >
-                    {getSeatName(r.seat_id)}
-                  </div>
-                ))}
+                {dayReservations.slice(0, 3).map((r) => {
+                  const isOwner = user?.id === r.user_id
+                  return (
+                    <div
+                      key={r.id}
+                      className={`text-[10px] truncate rounded px-1 py-0.5 mb-0.5 ${isOwner ? 'cursor-pointer hover:brightness-125' : ''}`}
+                      style={{ backgroundColor: userIdToColor(r.user_id) }}
+                      onClick={isOwner ? (e) => { e.stopPropagation(); onEdit(r) } : undefined}
+                    >
+                      {getSeatName(r.seat_id)}
+                    </div>
+                  )
+                })}
                 {dayReservations.length > 3 && (
                   <div className="text-[10px] text-gray-500 px-1">
                     +{dayReservations.length - 3}件
@@ -619,20 +667,24 @@ function MonthView({
 // ========== Reservation Block Component ==========
 
 function ReservationBlock({
-  reservation, getSeatName, getTime, isOwner, onCancel, compact,
+  reservation, getSeatName, getTime, isOwner, onCancel, onEdit, compact,
 }: {
   reservation: Reservation
   getSeatName: (id: string) => string
   getTime: (r: Reservation) => string
   isOwner: boolean
   onCancel: (id: string) => void
+  onEdit?: (reservation: Reservation) => void
   compact?: boolean
 }) {
   return (
     <div
-      className={`rounded px-2 py-1 text-xs ${compact ? 'mb-0.5' : 'mb-1'}`}
+      className={`rounded px-2 py-1 text-xs ${compact ? 'mb-0.5' : 'mb-1'} ${isOwner ? 'cursor-pointer hover:brightness-125' : ''}`}
       style={{ backgroundColor: userIdToColor(reservation.user_id) }}
-      onClick={(e) => e.stopPropagation()}
+      onClick={(e) => {
+        e.stopPropagation()
+        if (isOwner && onEdit) onEdit(reservation)
+      }}
     >
       <div className="flex items-center justify-between gap-1">
         <div className="truncate">
@@ -648,7 +700,7 @@ function ReservationBlock({
         </div>
         {isOwner && (
           <button
-            onClick={() => onCancel(reservation.id)}
+            onClick={(e) => { e.stopPropagation(); onCancel(reservation.id) }}
             className="text-white/70 hover:text-white text-[10px] shrink-0"
           >
             ✕
