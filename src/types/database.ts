@@ -7,10 +7,30 @@ export type Json =
   | Json[]
 
 export type Database = {
-  // Allows to automatically instantiate createClient with right options
-  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
-  __InternalSupabase: {
-    PostgrestVersion: "14.5"
+  graphql_public: {
+    Tables: {
+      [_ in never]: never
+    }
+    Views: {
+      [_ in never]: never
+    }
+    Functions: {
+      graphql: {
+        Args: {
+          extensions?: Json
+          operationName?: string
+          query?: string
+          variables?: Json
+        }
+        Returns: Json
+      }
+    }
+    Enums: {
+      [_ in never]: never
+    }
+    CompositeTypes: {
+      [_ in never]: never
+    }
   }
   public: {
     Tables: {
@@ -68,6 +88,7 @@ export type Database = {
           canceled_at: string | null
           created_at: string
           date: string
+          ends_at: string | null
           expires_at: string
           id: string
           seat_id: string
@@ -80,6 +101,7 @@ export type Database = {
           canceled_at?: string | null
           created_at?: string
           date: string
+          ends_at?: string | null
           expires_at: string
           id?: string
           seat_id: string
@@ -92,6 +114,7 @@ export type Database = {
           canceled_at?: string | null
           created_at?: string
           date?: string
+          ends_at?: string | null
           expires_at?: string
           id?: string
           seat_id?: string
@@ -313,7 +336,11 @@ export type CompositeTypes<
     : never
 
 export const Constants = {
+  graphql_public: {
+    Enums: {},
+  },
   public: {
     Enums: {},
   },
 } as const
+
