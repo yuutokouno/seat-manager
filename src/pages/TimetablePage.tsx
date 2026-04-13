@@ -237,10 +237,18 @@ export function TimetablePage() {
         <DayView
           currentDate={currentDate}
           reservations={reservations}
+          seats={sortedSeats}
           user={user}
-          getSeatName={getSeatName}
           getReservationTime={getReservationTime}
-          onTimeClick={(hour) => handleTimeClick(getLocalDateStr(currentDate), hour)}
+          onSeatTimeClick={(seatId, hour) => {
+            if (!user) return
+            const dateStr = getLocalDateStr(currentDate)
+            setModalDate(dateStr)
+            setModalTime(`${String(hour).padStart(2, '0')}:00`)
+            setModalEndTime('')
+            setModalSeatId(seatId)
+            setShowModal(true)
+          }}
           onCancel={handleCancel}
         />
       )}
@@ -327,52 +335,116 @@ export function TimetablePage() {
 // ========== Day View ==========
 
 function DayView({
-  currentDate, reservations, user, getSeatName, getReservationTime, onTimeClick, onCancel,
+  currentDate, reservations, seats, user, getReservationTime, onSeatTimeClick, onCancel,
 }: {
   currentDate: Date
   reservations: Reservation[]
+  seats: { id: string; name: string }[]
   user: { id: string } | null
-  getSeatName: (id: string) => string
   getReservationTime: (r: Reservation) => string
-  onTimeClick: (hour: number) => void
+  onSeatTimeClick: (seatId: string, hour: number) => void
   onCancel: (id: string) => void
 }) {
   const dateStr = getLocalDateStr(currentDate)
   const dayReservations = reservations.filter((r) => r.date === dateStr)
+  const sortedSeats = [...seats].sort((a, b) => a.name.localeCompare(b.name))
+
+  const TIME_SLOTS_30 = Array.from({ length: 48 }, (_, i) => {
+    const h = Math.floor(i / 2)
+    const m = i % 2 === 0 ? '00' : '30'
+    return `${String(h).padStart(2, '0')}:${m}`
+  })
+
+  const getCoveringReservation = (seatId: string, timeSlot: string) => {
+    const seatReservations = dayReservations
+      .filter((r) => r.seat_id === seatId)
+      .map((r) => ({
+        ...r,
+        startSlot: getReservationTime(r),
+        endSlot: r.ends_at
+          ? new Date(r.ends_at).toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit', hour12: false })
+          : '24:00',
+      }))
+      .sort((a, b) => a.startSlot.localeCompare(b.startSlot))
+
+    for (const r of seatReservations) {
+      if (r.startSlot === timeSlot) return { reservation: r, isStart: true }
+      if (r.startSlot < timeSlot && timeSlot < r.endSlot) return { reservation: r, isStart: false }
+    }
+    return null
+  }
 
   return (
     <div className="bg-gray-900 rounded-xl overflow-auto" style={{ maxHeight: 'calc(100vh - 280px)' }}>
-      {HOURS.map((hour) => {
-        const hourStr = String(hour).padStart(2, '0')
-        const hourReservations = dayReservations.filter((r) => {
-          const t = getReservationTime(r)
-          return t.startsWith(hourStr + ':')
-        })
+      <table className="border-collapse min-w-full">
+        <thead className="sticky top-0 z-20">
+          <tr>
+            <th className="sticky left-0 z-30 bg-gray-900 px-3 py-2 text-xs text-gray-400 font-medium border-b border-gray-800 min-w-[60px]">
+              時間
+            </th>
+            {sortedSeats.map((seat) => (
+              <th
+                key={seat.id}
+                className="bg-gray-900 px-2 py-2 text-xs text-gray-400 font-medium border-b border-gray-800 min-w-[72px] text-center"
+              >
+                {seat.name}
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {TIME_SLOTS_30.map((slot) => (
+            <tr key={slot}>
+              <td className="sticky left-0 bg-gray-900 z-10 px-3 py-1 text-xs text-gray-500 border-b border-gray-800/50 font-mono">
+                {slot}
+              </td>
+              {sortedSeats.map((seat) => {
+                const covering = getCoveringReservation(seat.id, slot)
 
-        return (
-          <div
-            key={hour}
-            className="flex border-b border-gray-800/50 min-h-[60px] cursor-pointer hover:bg-gray-800/30 transition-colors"
-            onClick={() => onTimeClick(hour)}
-          >
-            <div className="w-16 shrink-0 py-2 px-3 text-xs text-gray-500 font-mono border-r border-gray-800/50">
-              {hourStr}:00
-            </div>
-            <div className="flex-1 py-1 px-2 space-y-1">
-              {hourReservations.map((r) => (
-                <ReservationBlock
-                  key={r.id}
-                  reservation={r}
-                  getSeatName={getSeatName}
-                  getTime={getReservationTime}
-                  isOwner={user?.id === r.user_id}
-                  onCancel={onCancel}
-                />
-              ))}
-            </div>
-          </div>
-        )
-      })}
+                if (!covering) {
+                  return (
+                    <td
+                      key={seat.id}
+                      className="px-2 py-1 border-b border-gray-800/50 cursor-pointer hover:bg-gray-800 transition-colors"
+                      onClick={() => onSeatTimeClick(seat.id, parseInt(slot.split(':')[0]))}
+                    />
+                  )
+                }
+
+                const { reservation, isStart } = covering
+                const isOwner = user?.id === reservation.user_id
+
+                return (
+                  <td
+                    key={seat.id}
+                    className="px-1 py-1 border-b border-gray-800/50 text-center text-xs"
+                    style={{ backgroundColor: userIdToColor(reservation.user_id) }}
+                  >
+                    {isStart ? (
+                      <div className="flex flex-col items-center gap-0.5">
+                        {reservation.profile?.avatar_url && (
+                          <img src={reservation.profile.avatar_url} alt="" className="w-6 h-6 rounded-full" />
+                        )}
+                        <span className="truncate max-w-[60px] font-medium">
+                          {reservation.profile?.name ?? '不明'}
+                        </span>
+                        {isOwner && (
+                          <button
+                            onClick={(e) => { e.stopPropagation(); onCancel(reservation.id) }}
+                            className="text-white/70 hover:text-white text-[10px]"
+                          >
+                            取消
+                          </button>
+                        )}
+                      </div>
+                    ) : null}
+                  </td>
+                )
+              })}
+            </tr>
+          ))}
+        </tbody>
+      </table>
     </div>
   )
 }
