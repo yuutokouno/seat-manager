@@ -9,6 +9,9 @@
   "triggers": {
     "crons": ["0 15 * * *", "0 16 * * *", "*/10 * * * *"]
   },
+  "vars": {
+    "SUPABASE_URL": "https://xyhkjhcxdorcfuimraya.supabase.co"
+  },
   "observability": {
     "enabled": true,
     "logs": {
