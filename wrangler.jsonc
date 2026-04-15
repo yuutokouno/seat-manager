@@ -8,5 +8,12 @@
   },
   "triggers": {
     "crons": ["0 15 * * *", "*/10 * * * *"]
+  },
+  "observability": {
+    "enabled": true,
+    "logs": {
+      "enabled": true,
+      "invocation_logs": true
+    }
   }
 }
