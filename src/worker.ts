@@ -19,7 +19,7 @@ export default {
 
     try {
       // Daily reset: close all active sessions + past reservations (runs at 0:00 JST / 15:00 UTC)
-      if (event.cron === '0 15 * * *' || event.cron === '0 16 * * *') {
+      if (event.cron === '0 15 * * *') {
         const now = new Date()
         const today = now.toISOString().split('T')[0]
 
