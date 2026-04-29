@@ -1,9 +1,70 @@
 interface Env {
   SUPABASE_URL: string
   SUPABASE_SERVICE_ROLE_KEY: string
+  ASSETS: Fetcher
+  OFFICE_IP: string
+}
+
+const JSON_HEADERS = {
+  'Content-Type': 'application/json',
+  'Access-Control-Allow-Origin': '*',
 }
 
 export default {
+  async fetch(request: Request, env: Env): Promise<Response> {
+    const url = new URL(request.url)
+
+    // Handle attendance detection endpoint
+    if (request.method === 'POST' && url.pathname === '/api/attendance') {
+      const clientIp = request.headers.get('CF-Connecting-IP') ?? ''
+
+      // Return false immediately if the request is not from the office IP
+      if (clientIp !== env.OFFICE_IP) {
+        return Response.json({ at_office: false }, { headers: JSON_HEADERS })
+      }
+
+      // Parse request body to get user_id and date
+      let body: { user_id: string; date: string }
+      try {
+        body = await request.json()
+      } catch {
+        return Response.json({ at_office: false }, { headers: JSON_HEADERS })
+      }
+
+      // Upsert attendance log (best-effort: always return at_office: true on office IP match)
+      try {
+        const upsertResponse = await fetch(
+          `${env.SUPABASE_URL}/rest/v1/attendance_logs`,
+          {
+            method: 'POST',
+            headers: {
+              'apikey': env.SUPABASE_SERVICE_ROLE_KEY,
+              'Authorization': `Bearer ${env.SUPABASE_SERVICE_ROLE_KEY}`,
+              'Content-Type': 'application/json',
+              // Ignore duplicate entries (same user + date)
+              'Prefer': 'resolution=ignore-duplicates',
+            },
+            body: JSON.stringify({
+              user_id: body.user_id,
+              date: body.date,
+            }),
+          }
+        )
+
+        if (!upsertResponse.ok) {
+          console.error('Failed to upsert attendance log:', await upsertResponse.text())
+        }
+      } catch (e) {
+        console.error('Error calling Supabase for attendance upsert:', e)
+      }
+
+      return Response.json({ at_office: true }, { headers: JSON_HEADERS })
+    }
+
+    // Pass through all other requests to static assets
+    return env.ASSETS.fetch(request)
+  },
+
   async scheduled(event: { cron: string }, env: Env, ctx: ExecutionContext) {
     const headers: Record<string, string> = {
       'apikey': env.SUPABASE_SERVICE_ROLE_KEY,

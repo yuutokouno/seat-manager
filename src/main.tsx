@@ -7,6 +7,7 @@ import { SeatPage } from './pages/SeatPage'
 import { LoginPage } from './pages/LoginPage'
 import { AdminPage } from './pages/AdminPage'
 import { TimetablePage } from './pages/TimetablePage'
+import { AttendancePage } from './pages/AttendancePage'
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
@@ -17,6 +18,7 @@ createRoot(document.getElementById('root')!).render(
         <Route path="/login" element={<LoginPage />} />
         <Route path="/admin" element={<AdminPage />} />
         <Route path="/timetable" element={<TimetablePage />} />
+        <Route path="/attendance" element={<AttendancePage />} />
       </Routes>
     </BrowserRouter>
   </StrictMode>,

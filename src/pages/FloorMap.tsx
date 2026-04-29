@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
+import { useAttendance } from '../hooks/useAttendance'
 import { useSeats } from '../hooks/useSeats'
 import { useLabels } from '../hooks/useLabels'
 import { useSession } from '../hooks/useSession'
@@ -17,6 +18,7 @@ type BottomSheetMode = 'info' | 'reserve'
 
 export function FloorMap() {
   const { user, role } = useAuth()
+  const { atOffice } = useAttendance(user?.id ?? null)
   const { seats, isLoading } = useSeats()
   const { labels } = useLabels()
   const { occupy, leave } = useSession()
@@ -141,11 +143,23 @@ export function FloorMap() {
               ペナルティ {penaltyCount}/{PENALTY_THRESHOLD}
             </span>
           )}
+          {/* Show "at office" badge only when confirmed true */}
+          {atOffice === true && (
+            <span className="bg-blue-600 text-white px-2 py-0.5 rounded-full text-xs font-semibold">
+              出社中
+            </span>
+          )}
           <button
             onClick={() => navigate('/timetable')}
             className="text-gray-400 text-xs hover:text-white transition-colors"
           >
             予約一覧
+          </button>
+          <button
+            onClick={() => navigate('/attendance')}
+            className="text-gray-400 text-xs hover:text-white transition-colors"
+          >
+            出社統計
           </button>
           {role === 'admin' && (
             <button

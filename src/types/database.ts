@@ -34,6 +34,35 @@ export type Database = {
   }
   public: {
     Tables: {
+      attendance_logs: {
+        Row: {
+          id: string
+          user_id: string
+          date: string
+          detected_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          date: string
+          detected_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          date?: string
+          detected_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "attendance_logs_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
       floor_labels: {
         Row: {
           height: number | null
