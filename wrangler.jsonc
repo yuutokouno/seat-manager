@@ -10,8 +10,7 @@
     "crons": ["0 15 * * *", "*/10 * * * *"]
   },
   "vars": {
-    "SUPABASE_URL": "https://xyhkjhcxdorcfuimraya.supabase.co",
-    "OFFICE_IP": "REDACTED"
+    "SUPABASE_URL": "https://xyhkjhcxdorcfuimraya.supabase.co"
   },
   "observability": {
     "enabled": true,
