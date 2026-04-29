@@ -7,11 +7,6 @@ import { useAuth } from '../hooks/useAuth'
 // Types
 // ---------------------------------------------------------------------------
 
-type AttendanceLog = {
-  user_id: string
-  date: string
-}
-
 type Profile = {
   id: string
   name: string | null
@@ -76,7 +71,7 @@ function calcStreak(dates: string[]): number {
 // Build 53 weeks (371 cells) ending on today, padded with nulls for the future.
 // ---------------------------------------------------------------------------
 
-function buildHeatmapWeeks(attendedDates: Set<string>): (string | null)[][] {
+function buildHeatmapWeeks(): (string | null)[][] {
   const today = new Date()
   // Align to Sunday (start of last week column)
   const endDate = new Date(today)
@@ -111,7 +106,7 @@ function buildHeatmapWeeks(attendedDates: Set<string>): (string | null)[][] {
 // ---------------------------------------------------------------------------
 
 function HeatmapGrid({ attendedDates }: { attendedDates: Set<string> }) {
-  const weeks = buildHeatmapWeeks(attendedDates)
+  const weeks = buildHeatmapWeeks()
   const DAY_LABELS = ['Sun', '', 'Tue', '', 'Thu', '', 'Sat']
 
   return (
